@@ -1,0 +1,68 @@
+owner: personal
+environments:
+  - label: staging
+    branches:
+      - dev
+      - dev/*
+    targetOverrides:
+      configuration:
+        icon: marketing/beta-game-icon.png
+  - label: production
+    branches:
+      - main
+    targetAccess: public
+target:
+  experience:
+    configuration:
+      genre: naval
+      playableDevices:
+        - computer
+      playability: private
+      enableStudioAccessToApis: true
+      icon: marketing/game-icon.png
+      thumbnails:
+        - marketing/game-thumbnail-fall-update.png
+        - marketing/game-thumbnail-default.png
+    places:
+      start:
+        file: game.rbxlx
+        configuration:
+          name: '2'
+          description: >-
+            This is an example place description                 uses
+            ShrouvEngine                 
+          maxPlayerCount: 10
+          serverFill: robloxOptimized
+    socialLinks:
+      - title: Follow on Twitter
+        url: https://twitter.com/Roblox
+    products:
+      fiftyGold:
+        name: 50 Gold!
+        description: 50 Gold
+        icon: products/50-gold.png
+        price: 50
+      hundredGold:
+        name: 100 Gold!
+        description: 100 Gold
+        icon: products/100-gold.png
+        price: 100
+    passes:
+      shipOfTheLine:
+        name: Ship of the Line
+        description: Get the best ship in the game
+        icon: passes/ship-of-the-line.png
+        price: 499
+    badges:
+      captureFirstShip:
+        name: Capture First Ship
+        description: Capture your first ship
+        icon: badges/capture-first-ship.png
+    assets:
+      - assets/*
+      - file: marketing/icon.png
+        name: game-icon
+    notifications:
+      customInvitePrompt:
+        name: Custom Invite Prompt
+        content: '{displayName} is inviting you to join their crew on {experienceName}!'
