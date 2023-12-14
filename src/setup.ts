@@ -5,7 +5,11 @@ import chalk from "chalk";
 import { cloneDirectory, primary, success } from "./utils.js";
 import { createRojoProjectConfig } from "./rojo.js";
 
-export function createProject(projectName: string, config: MantleConfig) {
+export function createProject(
+  projectName: string,
+  projectTemplate: "experimental" | "shrouv-classic" | "slither-style",
+  config: MantleConfig
+) {
   const yamlConfig = yaml.dump(config);
   const projectConfig = JSON.stringify(
     createRojoProjectConfig(projectName),
@@ -13,7 +17,7 @@ export function createProject(projectName: string, config: MantleConfig) {
     2
   );
   const projectDir = `../experiences/${projectName}`;
-  cloneDirectory("./default-project", projectDir);
+  cloneDirectory(`./projects/${projectTemplate}`, projectDir);
   fs.writeFileSync(`${projectDir}/mantle.yml`, yamlConfig);
   fs.writeFileSync(`${projectDir}/default.project.json`, projectConfig);
 

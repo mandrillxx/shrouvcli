@@ -12,6 +12,11 @@ console.log(figlet.textSync("ShrouvEngine"));
 
 const setupType = ["easy", "full"] as const;
 const payments = ["owner", "personal", "group"] as const;
+export const projectTemplate = [
+  "experimental",
+  "shrouv-classic",
+  "slither-style",
+] as const;
 const genre = [
   "all",
   "adventure",
@@ -46,6 +51,7 @@ export type Answers = {
 
 type InitialAnswers = {
   projectName: string;
+  projectTemplate: "experimental" | "shrouv-classic" | "slither-style";
   groupExperience: boolean;
 };
 
@@ -75,6 +81,13 @@ const initialQuestions: QuestionCollection = [
         return "Please enter a name for your experience.";
       }
     },
+  },
+  {
+    type: "list",
+    name: "projectTemplate",
+    message: "Which project template do you want to use?",
+    choices: projectTemplate,
+    default: "shrouv-classic",
   },
   {
     type: "confirm",
@@ -173,6 +186,7 @@ switch (requestedSetupType.setupType) {
   case "easy":
     let answersConfig: Answers = {
       setupType: "easy",
+      projectTemplate: "shrouv-classic",
       projectName: "",
       groupExperience: false,
       payments: "owner",
@@ -201,7 +215,11 @@ switch (requestedSetupType.setupType) {
     answersConfig = { ...answersConfig, ...initialAnswers, ...finalAnswers };
 
     const config = answersToMantleConfig(answersConfig);
-    createProject(answersConfig.projectName, config);
+    createProject(
+      answersConfig.projectName,
+      initialAnswers.projectTemplate,
+      config
+    );
     break;
   case "full":
     break;

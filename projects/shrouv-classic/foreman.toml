@@ -1,0 +1,3 @@
+[tools]
+mantle = { source = "blake-mealey/mantle", version = "0.11.11" }
+tarmac = { source = "Roblox/tarmac", version = "0.7.0" }
