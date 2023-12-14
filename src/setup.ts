@@ -7,8 +7,8 @@ import { cloneDirectory, primary, success } from "./utils.js";
 export function createProject(projectName: string, config: MantleConfig) {
   const yamlConfig = yaml.dump(config);
   const projectDir = `../experiences/${projectName}`;
-  // cloneDirectory("./default-project", projectDir);
-  // fs.writeFileSync(`${projectDir}/mantle.yml`, yamlConfig);
+  cloneDirectory("./default-project", projectDir);
+  fs.writeFileSync(`${projectDir}/mantle.yml`, yamlConfig);
 
   console.log(
     `\n\n${success("SUCCESS")} Created project ${primary(
