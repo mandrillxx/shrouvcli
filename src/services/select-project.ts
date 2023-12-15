@@ -11,13 +11,14 @@ import { colors } from "../constants/index.js";
 import { RojoProjectConfig } from "../rojo.js";
 import { ShrouvConfig } from "./core/shrouv.js";
 import { installModule, installModules, removeModules } from "./core/module.js";
+import { beginPrompt } from "./prompt.js";
 
 interface SelectProjectAnswers {
   project: string;
 }
 
 interface ManageProjectAnswers {
-  action: "deploy" | "build" | "delete" | "manageModules" | "back";
+  action: "deploy" | "build" | "delete" | "manageModules" | "back" | "exit";
 }
 
 async function manageModules(path: string) {
@@ -92,6 +93,10 @@ async function manageProject(path: string) {
         {
           name: `5. Back`,
           value: "back",
+        },
+        {
+          name: `6. Exit`,
+          value: "exit",
         },
       ],
     },
@@ -193,24 +198,38 @@ async function manageProject(path: string) {
     case "back":
       await selectProject();
       break;
+    case "exit":
+      return;
   }
 }
 
 export async function selectProject() {
   const experiences = await getDirectories("../experiences");
-  const choices = experiences.map((experience) => {
-    const disabled =
-      !fs.existsSync(`../experiences/${experience}/mantle.yml`) ||
-      !fs.existsSync(`../experiences/${experience}/default.project.json`) ||
-      !fs.existsSync(`../experiences/${experience}/shrouv.json`);
-    return {
-      name: `${experience} ${
-        disabled ? `${colors.gray}(invalid project)` : ""
-      } ${colors.reset}`,
-      value: experience,
-      disabled,
-    };
-  });
+  const choices = [
+    ...experiences.map((experience) => {
+      const disabled =
+        !fs.existsSync(`../experiences/${experience}/mantle.yml`) ||
+        !fs.existsSync(`../experiences/${experience}/default.project.json`) ||
+        !fs.existsSync(`../experiences/${experience}/shrouv.json`);
+      return {
+        name: `${experience} ${
+          disabled ? `${colors.gray}(invalid project)` : ""
+        } ${colors.reset}`,
+        value: experience,
+        disabled,
+      };
+    }),
+    new inquirer.Separator(),
+    {
+      name: "Back",
+      value: "back",
+    },
+    {
+      name: "Exit",
+      value: "exit",
+    },
+    new inquirer.Separator(),
+  ];
   const answers = await inquirer.prompt<SelectProjectAnswers>([
     {
       type: "list",
@@ -219,6 +238,13 @@ export async function selectProject() {
       choices,
     },
   ]);
+
+  if (answers.project === "back") {
+    await beginPrompt();
+    return;
+  } else if (answers.project === "exit") {
+    return;
+  }
 
   const projectDirectory = `../experiences/${answers.project}`;
   manageProject(projectDirectory);
