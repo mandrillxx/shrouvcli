@@ -6,7 +6,7 @@ interface InstanceDescription {
   $properties?: { [key: string]: InstanceDescription };
 }
 
-interface RojoProjectConfig {
+export interface RojoProjectConfig {
   name: string;
   tree: InstanceDescription;
 }

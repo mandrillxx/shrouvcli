@@ -1,6 +1,5 @@
-import yaml from "js-yaml";
-import fs from "fs";
-import { Answers } from "./index.js";
+import { DEFAULT_DESCRIPTION, Genre } from "../../constants/index.js";
+import { EasySetupAnswers } from "../create-project.js";
 
 interface MantleEnvironment {
   label: string;
@@ -10,23 +9,6 @@ interface MantleEnvironment {
   targetAccess?: "public" | "private" | "friends";
   targetOverrides?: MantleExperience;
 }
-
-export type Genre =
-  | "all"
-  | "adventure"
-  | "building"
-  | "comedy"
-  | "fighting"
-  | "fps"
-  | "horror"
-  | "medieval"
-  | "military"
-  | "naval"
-  | "rpg"
-  | "sciFi"
-  | "sports"
-  | "townAndCity"
-  | "western";
 
 interface MantleExperienceConfiguration {
   genre?: Genre;
@@ -105,31 +87,19 @@ export interface MantleConfig {
   target: MantleTarget;
 }
 
-export function generateMantleConfig(
-  config: Partial<MantleConfig>
-): MantleConfig {
-  const defaultConfig: MantleConfig = {
-    environments: [...(config.environments || [])],
-    target: {
-      experience: {},
-    },
-  };
-  const yamlConfig = yaml.dump(defaultConfig);
-  fs.writeFileSync("mantle.yml", yamlConfig);
-  return defaultConfig;
-}
-
-export function answersToMantleConfig(answers: Answers): MantleConfig {
-  const owner = answers.groupExperience
-    ? { group: answers.groupId! }
-    : "personal";
-  const {
-    payments,
-    includeDev,
-    playableDevices,
-    genre,
-    enableStudioAccessToApis,
-  } = answers;
+export function answersToMantleConfig({
+  name,
+  payments,
+  groupOwned,
+  groupId,
+  genre,
+  playableDevices,
+  includeDev,
+  enableStudioAccessToApis,
+  maxPlayerCount,
+  targetAccess,
+}: EasySetupAnswers): MantleConfig {
+  const owner = groupOwned ? { group: groupId! } : "personal";
   const environments: MantleEnvironment[] = [
     ...(includeDev
       ? [
@@ -148,8 +118,7 @@ export function answersToMantleConfig(answers: Answers): MantleConfig {
       targetAccess: "public",
     },
   ];
-
-  const defaultConfig: MantleConfig = {
+  const config: MantleConfig = {
     owner,
     payments,
     environments,
@@ -158,71 +127,26 @@ export function answersToMantleConfig(answers: Answers): MantleConfig {
         configuration: {
           genre,
           playableDevices,
-          playability: answers.targetAccess,
+          playability: targetAccess,
           enableStudioAccessToApis,
         },
         places: {
           start: {
             file: "game.rbxlx",
             configuration: {
-              name: answers.projectName,
-              description:
-                "This is an example place description \
-                uses ShrouvEngine \
-                ",
-              maxPlayerCount: 10,
+              name,
+              description: DEFAULT_DESCRIPTION,
+              maxPlayerCount,
               serverFill: "robloxOptimized",
             },
-          },
-        },
-        socialLinks: [
-          {
-            title: "Follow on Twitter",
-            url: "https://twitter.com/Roblox",
-          },
-        ],
-        products: {
-          fiftyGold: {
-            name: "50 Gold!",
-            description: "50 Gold",
-            icon: "assets\\products\\50-gold.png",
-            price: 50,
-          },
-          hundredGold: {
-            name: "100 Gold!",
-            description: "100 Gold",
-            icon: "assets\\products\\100-gold.png",
-            price: 100,
-          },
-        },
-        passes: {
-          shipOfTheLine: {
-            name: "Ship of the Line",
-            description: "Get the best ship in the game",
-            icon: "assets\\passes\\ship-of-the-line.png",
-            price: 499,
-          },
-        },
-        badges: {
-          captureFirstShip: {
-            name: "Capture First Ship",
-            description: "Capture your first ship",
-            icon: "assets\\badges\\capture-first-ship.png",
           },
         },
         assets: [
           "assets/sounds/*",
           { file: "assets\\marketing\\icon.png", name: "game-icon" },
         ],
-        notifications: {
-          customInvitePrompt: {
-            name: "Custom Invite Prompt",
-            content:
-              "{displayName} is inviting you to join their crew on {experienceName}!",
-          },
-        },
       },
     },
   };
-  return defaultConfig;
+  return config;
 }

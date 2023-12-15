@@ -1,11 +1,7 @@
+import { spawn } from "node:child_process";
 import fs from "fs";
 import fse from "fs-extra";
-import chalk from "chalk";
-
-export const error = chalk.bold.red;
-export const warning = chalk.bold.hex("#FFA500");
-export const primary = chalk.bold.white;
-export const success = chalk.bold.green;
+import inquirer from "inquirer";
 
 export async function cloneDirectory(
   sourcePath: string,
@@ -33,4 +29,61 @@ export async function cloneDirectory(
   } catch (error: any) {
     console.error(`Error cloning directory: ${error.message}`);
   }
+}
+
+export async function getDirectories(sourcePath: string): Promise<string[]> {
+  try {
+    const files = await fse.readdir(sourcePath);
+    const directories = files.filter((file) =>
+      fse.statSync(`${sourcePath}/${file}`).isDirectory()
+    );
+
+    return directories;
+  } catch (error: any) {
+    console.error(`Error getting directories: ${error.message}`);
+    return [];
+  }
+}
+
+interface SpawnProcessParams {
+  cmd: string;
+  cwd: string;
+  successMessage: string;
+}
+
+export function spawnProcess({ cmd, cwd, successMessage }: SpawnProcessParams) {
+  const child = spawn(cmd, {
+    stdio: "inherit",
+    shell: true,
+    cwd,
+  });
+
+  child.on("exit", (code) => {
+    if (code === 0) {
+      console.log(successMessage);
+    }
+  });
+}
+
+interface ConfirmTargetPathOverwriteParams {
+  path: string;
+  target: string;
+}
+
+export async function confirmTargetPathOverwrite({
+  path,
+  target,
+}: ConfirmTargetPathOverwriteParams) {
+  const confirm = await inquirer.prompt({
+    type: "confirm",
+    name: "overwrite",
+    message: `Target directory "${target}" exits. Do you want to overwrite it?`,
+    default: false,
+  });
+
+  if (!confirm.overwrite) {
+    process.exit(0);
+  }
+
+  fs.rmSync(path, { recursive: true, force: true });
 }
