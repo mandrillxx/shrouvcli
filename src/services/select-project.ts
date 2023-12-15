@@ -27,28 +27,30 @@ async function manageModules(path: string) {
   ) as ShrouvConfig;
   const allModules = await getDirectories("./modules");
   const selectedModules = getModulesFromProject(path);
-  const answers = await inquirer.prompt<{ modules: string[] }>([
+  const choices = [
+    ...allModules.map((module) => ({
+      name: module,
+      value: module,
+      disabled: selectedModules.includes(module),
+    })),
+    new inquirer.Separator(),
     {
-      type: "checkbox",
-      name: "modules",
-      message: "Which modules would you like to use?",
-      choices: allModules.map((module) => ({
-        name: module,
-        value: module,
-        checked: selectedModules.includes(module),
-      })),
+      name: "Back",
+      value: "back",
+    },
+  ];
+  const answers = await inquirer.prompt<{ module: string }>([
+    {
+      type: "list",
+      name: "module",
+      message: "Which modules would you like to install?",
+      choices,
     },
   ]);
-  shrouvConfig.modules = answers.modules;
+  if (answers.module === "back") return;
+  shrouvConfig.modules = [...shrouvConfig.modules, answers.module];
   fs.writeFileSync(shrouvConfigPath, JSON.stringify(shrouvConfig, null, 2));
-  const addedModules = answers.modules.filter(
-    (module) => !selectedModules.includes(module)
-  );
-  installModules(addedModules);
-  const removedModules = selectedModules.filter(
-    (module) => !answers.modules.includes(module)
-  );
-  removeModules(removedModules);
+  installModule(answers.module, path);
 }
 
 async function manageProject(path: string) {
@@ -86,6 +88,7 @@ async function manageProject(path: string) {
           name: `4. Manage modules`,
           value: "manageModules",
         },
+        new inquirer.Separator(),
         {
           name: `5. Back`,
           value: "back",

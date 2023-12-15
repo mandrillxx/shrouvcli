@@ -63,7 +63,7 @@ async function easySetup() {
       name: "projectTemplate",
       message: "What project template do you want to use?",
       choices: await getDirectories("./projects"),
-      default: "classic"
+      default: "classic",
     },
     {
       type: "confirm",

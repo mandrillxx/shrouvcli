@@ -18,6 +18,7 @@ export async function beginPrompt() {
       { name: "Create a new project", value: "newProject" },
       { name: "Manage existing project", value: "existingProject" },
       { name: "Install a module", value: "installModule" },
+      new inquirer.Separator(),
       { name: "Exit", value: "exit" },
     ],
   });
