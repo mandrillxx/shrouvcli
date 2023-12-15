@@ -11,6 +11,7 @@ import { createRojoProjectConfig } from "../../rojo.js";
 import { answersToMantleConfig } from "./mantle.js";
 import { colors, primary, success } from "../../constants/index.js";
 import chalk from "chalk";
+import { ShrouvConfig } from "./shrouv.js";
 
 interface CreateShrouvExperienceOptions {
   runNpmInstall: boolean;
@@ -31,6 +32,17 @@ async function createProject(answers: EasySetupAnswers) {
   cloneDirectory(`./projects/${answers.projectTemplate}`, path);
   fs.writeFileSync(`${path}/mantle.yml`, yamlConfig);
   fs.writeFileSync(`${path}/default.project.json`, projectConfig);
+  fs.writeFileSync(
+    `${path}/shrouv.json`,
+    JSON.stringify(
+      {
+        name: answers.name,
+        modules: [],
+      } as ShrouvConfig,
+      null,
+      2
+    )
+  );
   return path;
 }
 
