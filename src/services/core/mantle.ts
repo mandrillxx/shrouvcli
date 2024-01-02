@@ -54,7 +54,7 @@ interface MantlePlaceConfiguration {
 }
 
 interface MantlePlace {
-  file: string;
+  file?: string;
   configuration: MantlePlaceConfiguration;
 }
 
@@ -105,9 +105,16 @@ export function answersToMantleConfig({
       ? [
           {
             label: "dev",
-            branches: ["dev", "dev/*"],
             targetOverrides: {
               icon: "assets\\marketing\\beta-game-icon.png",
+              places: {
+                start: {
+                  configuration: {
+                    name: `${name} DEV 🚧`,
+                    description: `${DEFAULT_DESCRIPTION} 🚧🚧 DEV 🚧🚧`,
+                  },
+                },
+              },
             },
           },
         ]
@@ -141,10 +148,7 @@ export function answersToMantleConfig({
             },
           },
         },
-        assets: [
-          "assets/sounds/*",
-          { file: "assets\\marketing\\icon.png", name: "game-icon" },
-        ],
+        assets: ["assets/sounds/*"],
       },
     },
   };
