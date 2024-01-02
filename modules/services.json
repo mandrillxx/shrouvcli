@@ -1,0 +1,39 @@
+{
+    "default": [
+        "@rbxts/log",
+        "@rbxts/services"
+    ],
+    "recommended": [
+        "@rbxts/log",
+        "@rbxts/services",
+        "@rbxts/maid",
+        "@rbxts/t",
+        "@rbxts/net",
+        "@rbxts/profileservice",
+        "@rbxts/promise-character",
+        "@rbxts/proton",
+        "@rbxts/stacks-and-queues",
+        "@rbxts/set-timeout",
+        "@rbxts/easing-functions",
+        [
+            "@rbxts/matter",
+            "@rbxts/matter-hooks",
+            "@rbxts/plasma",
+            "@rbxts/fusion",
+            "@rbxts/rewire"
+        ],
+        [
+            "@rbxts/@npm:@rbxts/react-ts@^0.9/0",
+            "@rbxts/roact",
+            "@rbxts/reflex",
+            "@rbxts/react-reflex",
+            "@rbxts/react-roblox",
+            "@rbxts/pretty-react-hooks",
+            "@rbxts/rbx-react-spring"
+        ],
+        [
+            "@rbxts/variant",
+            "@rbxts/rust-classes"
+        ]
+    ]
+}

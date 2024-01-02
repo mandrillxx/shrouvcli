@@ -5,12 +5,13 @@ import {
   spawnProcess,
 } from "../utils.js";
 import fs from "fs";
+import fse from "fs-extra";
 import yaml from "js-yaml";
 import { MantleConfig } from "./core/mantle.js";
 import { colors } from "../constants/index.js";
 import { RojoProjectConfig } from "../rojo.js";
 import { ShrouvConfig } from "./core/shrouv.js";
-import { installModule, installModules, removeModules } from "./core/module.js";
+import { installModule } from "./core/module.js";
 import { beginPrompt } from "./prompt.js";
 
 interface SelectProjectAnswers {
@@ -18,7 +19,14 @@ interface SelectProjectAnswers {
 }
 
 interface ManageProjectAnswers {
-  action: "deploy" | "build" | "delete" | "manageModules" | "back" | "exit";
+  action:
+    | "deploy"
+    | "build"
+    | "delete"
+    | "archive"
+    | "manageModules"
+    | "back"
+    | "exit";
 }
 
 async function manageModules(path: string) {
@@ -54,7 +62,50 @@ async function manageModules(path: string) {
   installModule(answers.module, path);
 }
 
-async function manageProject(path: string) {
+async function toggleArchiveProject(path: string) {
+  const shrouvConfig = JSON.parse(
+    fs.readFileSync(`${path}/shrouv.json`, "utf-8")
+  ) as ShrouvConfig;
+  const archiving = !shrouvConfig.archived;
+  const answers = await inquirer.prompt<{ confirm: boolean }>([
+    {
+      type: "confirm",
+      name: "confirm",
+      message: `Are you sure you want to ${
+        archiving ? "archive" : "unarchive"
+      } this project?`,
+    },
+  ]);
+
+  if (answers.confirm) {
+    shrouvConfig.archived = archiving;
+    fs.writeFileSync(
+      `${path}/shrouv.json`,
+      JSON.stringify(shrouvConfig, null, 2)
+    );
+
+    if (archiving) {
+      fse.moveSync(path, `../experiences/archived/${shrouvConfig.name}`);
+    } else {
+      fse.moveSync(path, `../experiences/${shrouvConfig.name}`);
+    }
+  }
+}
+
+async function deleteProject(path: string) {
+  const answers = await inquirer.prompt<{ confirm: boolean }>([
+    {
+      type: "confirm",
+      name: "confirm",
+      message: `Are you sure you want to delete this project?`,
+    },
+  ]);
+  if (answers.confirm) {
+    fse.removeSync(path);
+  }
+}
+
+export async function manageProject(path: string) {
   if (
     !fs.existsSync(`${path}/shrouv.json`) ||
     !fs.existsSync(`${path}/mantle.yml`) ||
@@ -86,7 +137,11 @@ async function manageProject(path: string) {
           value: "delete",
         },
         {
-          name: `4. Manage modules`,
+          name: `4. Archive project`,
+          value: "archive",
+        },
+        {
+          name: `5. Manage modules`,
           value: "manageModules",
         },
         new inquirer.Separator(),
@@ -98,6 +153,7 @@ async function manageProject(path: string) {
           name: `6. Exit`,
           value: "exit",
         },
+        new inquirer.Separator(),
       ],
     },
   ]);
@@ -164,7 +220,7 @@ async function manageProject(path: string) {
     case "delete": {
       const { confirm, environment } = await inquirer.prompt<{
         confirm: boolean;
-        environment: string;
+        environment: string & "all";
       }>([
         {
           type: "confirm",
@@ -175,11 +231,18 @@ async function manageProject(path: string) {
           type: "list",
           name: "environment",
           message: "Which environment do you want to destroy?",
-          choices: environments,
+          choices: [
+            ...environments,
+            { name: "Entire experience", value: "all" },
+          ],
           when: ({ confirm }) => confirm,
         },
       ]);
       if (confirm) {
+        if (environment === "all") {
+          deleteProject(path);
+          return;
+        }
         spawnProcess({
           cmd: `mantle destroy -e ${environment}`,
           cwd: path,
@@ -188,6 +251,11 @@ async function manageProject(path: string) {
       } else {
         manageProject(path);
       }
+      break;
+    }
+    case "archive": {
+      await toggleArchiveProject(path);
+      manageProject(path);
       break;
     }
     case "manageModules": {
@@ -204,7 +272,10 @@ async function manageProject(path: string) {
 }
 
 export async function selectProject() {
-  const experiences = await getDirectories("../experiences");
+  const experiences = (await getDirectories("../experiences")).filter(
+    (dir) => dir !== "archived"
+  );
+  const archivedExperiences = await getDirectories("../experiences/archived");
   const choices = [
     ...experiences.map((experience) => {
       const disabled =
@@ -219,6 +290,11 @@ export async function selectProject() {
         disabled,
       };
     }),
+    new inquirer.Separator(),
+    ...archivedExperiences.map((experience) => ({
+      name: `${experience} ${colors.gray}(archived) ${colors.reset}`,
+      value: `ARC${experience}`,
+    })),
     new inquirer.Separator(),
     {
       name: "Back",
@@ -246,6 +322,12 @@ export async function selectProject() {
     return;
   }
 
+  if (answers.project.startsWith("ARC")) {
+    const archivedProject = answers.project.replace("ARC", "");
+    const archivedProjectDirectory = `../experiences/archived/${archivedProject}`;
+    manageProject(archivedProjectDirectory);
+    return;
+  }
   const projectDirectory = `../experiences/${answers.project}`;
   manageProject(projectDirectory);
 }

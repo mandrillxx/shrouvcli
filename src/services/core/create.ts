@@ -9,9 +9,9 @@ import {
 } from "../../utils.js";
 import { createRojoProjectConfig } from "../../rojo.js";
 import { answersToMantleConfig } from "./mantle.js";
-import { colors, primary, success } from "../../constants/index.js";
-import chalk from "chalk";
+import { colors } from "../../constants/index.js";
 import { ShrouvConfig } from "./shrouv.js";
+import { manageProject } from "../select-project.js";
 
 interface CreateShrouvExperienceOptions {
   runNpmInstall: boolean;
@@ -37,6 +37,7 @@ async function createProject(answers: EasySetupAnswers) {
     JSON.stringify(
       {
         name: answers.name,
+        archived: false,
         modules: [],
       } as ShrouvConfig,
       null,
@@ -46,37 +47,77 @@ async function createProject(answers: EasySetupAnswers) {
   return path;
 }
 
-export async function createShrouvExperience(initialAnswers: EasySetupAnswers) {
-  const answers = await inquirer.prompt<CreateShrouvExperienceOptions>([
+interface ManageNewProjectAnswers {
+  actions: "openCode" | "openFolder" | "manage" | "exit";
+}
+
+async function manageNewProject(path: string) {
+  const answers = await inquirer.prompt<ManageNewProjectAnswers>([
     {
-      type: "confirm",
-      name: "runNpmInstall",
-      message: "Do you want to run npm install?",
-      default: true,
+      type: "list",
+      name: "actions",
+      message: "What would you like to do?",
+      choices: [
+        {
+          name: "Open in VSCode",
+          value: "openCode",
+        },
+        {
+          name: "Open folder",
+          value: "openFolder",
+        },
+        {
+          name: "Manage experience",
+          value: "manage",
+        },
+        new inquirer.Separator(),
+        {
+          name: "Exit",
+          value: "exit",
+        },
+      ],
     },
   ]);
 
+  switch (answers.actions) {
+    case "openCode": {
+      spawnProcess({
+        cmd: "code .",
+        cwd: path,
+        successMessage: `${colors.green}SUCCESS ${colors.white}Opening project code in VS Code${colors.reset}`,
+      });
+      await manageProject(path);
+      break;
+    }
+    case "openFolder": {
+      spawnProcess({
+        cmd: "start .",
+        cwd: path,
+        successMessage: `${colors.green}SUCCESS ${colors.white}Opening project folder${colors.reset}`,
+      });
+      await manageProject(path);
+      break;
+    }
+    case "manage": {
+      await manageProject(path);
+      break;
+    }
+    case "exit": {
+      return;
+    }
+  }
+}
+
+export async function createShrouvExperience(initialAnswers: EasySetupAnswers) {
   const path = await createProject(initialAnswers);
 
-  if (answers.runNpmInstall) {
+  if (initialAnswers.runNpmInstall) {
     spawnProcess({
-      cmd: "npm install",
+      cmd: `npm install ${initialAnswers.selectedNpmPackages.join(" ")}`,
       cwd: path,
       successMessage: `${colors.green}SUCCESS ${colors.white}Project created and installed successfully at ${colors.cyan}${path}${colors.reset}`,
     });
   }
 
-  console.log(
-    `\n\n${success("SUCCESS")} Created project ${primary(
-      initialAnswers.name
-    )}\n\n${success("NEXT STEPS")} \n\n${chalk.white("1. ")}Run ${primary(
-      `cd ${path}`
-    )}\n${chalk.white("2. ")}${
-      answers.runNpmInstall
-        ? `Run ${primary("npm run deploy:dev")}`
-        : `Run ${primary("npm install")}\n${chalk.white("3. ")}Run ${primary(
-            "npm run deploy:dev"
-          )}`
-    }\n`
-  );
+  await manageNewProject(path);
 }

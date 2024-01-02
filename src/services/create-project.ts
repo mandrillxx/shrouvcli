@@ -2,6 +2,7 @@ import inquirer from "inquirer";
 import { Genre, colors, warning } from "../constants/index.js";
 import { createShrouvExperience } from "./core/create.js";
 import { getDirectories } from "../utils.js";
+import { getDefaultServices, getServices } from "./core/service.js";
 
 interface CreateProjectAnswers {
   type: "full" | "easy";
@@ -12,6 +13,8 @@ export interface EasySetupAnswers {
   groupOwned: boolean;
   groupId?: number;
   payments: "owner" | "personal" | "group";
+  runNpmInstall: boolean;
+  selectedNpmPackages: string[];
   projectTemplate: string;
   includeDev: boolean;
   genre: Genre;
@@ -63,7 +66,21 @@ async function easySetup() {
       name: "projectTemplate",
       message: "What project template do you want to use?",
       choices: await getDirectories("./projects"),
-      default: "classic",
+      default: "basic",
+    },
+    {
+      type: "confirm",
+      name: "runNpmInstall",
+      message: "Do you want to run npm install?",
+      default: true,
+    },
+    {
+      type: "checkbox",
+      name: "selectedNpmPackages",
+      message: "What libraries do you want to use?",
+      choices: getServices(),
+      default: getDefaultServices(),
+      when: ({ runNpmInstall }) => runNpmInstall,
     },
     {
       type: "confirm",

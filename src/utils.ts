@@ -7,7 +7,7 @@ import { ShrouvConfig } from "./services/core/shrouv.js";
 export async function cloneDirectory(
   sourcePath: string,
   destinationPath: string
-): Promise<void> {
+) {
   try {
     if (!fse.existsSync(sourcePath)) {
       throw new Error(`Source directory does not exist: ${sourcePath}`);
