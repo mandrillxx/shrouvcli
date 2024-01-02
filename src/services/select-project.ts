@@ -10,9 +10,10 @@ import yaml from "js-yaml";
 import { MantleConfig } from "./core/mantle.js";
 import { colors } from "../constants/index.js";
 import { RojoProjectConfig } from "../rojo.js";
-import { ShrouvConfig } from "./core/shrouv.js";
+import { ShrouvGameConfig } from "./core/shrouv.js";
 import { installModule } from "./core/module.js";
 import { beginPrompt } from "./prompt.js";
+import { getServices, getDefaultServices } from "./core/service.js";
 
 interface SelectProjectAnswers {
   project: string;
@@ -25,15 +26,36 @@ interface ManageProjectAnswers {
     | "delete"
     | "archive"
     | "manageModules"
+    | "openCode"
+    | "openFolder"
     | "back"
     | "exit";
+}
+
+async function manageLibraries(path: string) {
+  const answers = await inquirer.prompt<{ libraries: string[] }>([
+    {
+      type: "checkbox",
+      name: "libraries",
+      message: "What libraries do you want to use?",
+      choices: getServices(),
+      default: getDefaultServices(),
+    },
+  ]);
+
+  spawnProcess({
+    cmd: `npm install ${answers.libraries.join(" ")}`,
+    cwd: path,
+    successMessage: `${colors.green}SUCCESS ${colors.white}Installed ${answers.libraries.length} libraries successfully${colors.cyan}${path}${colors.reset}`,
+  });
+  await manageProject(path);
 }
 
 async function manageModules(path: string) {
   const shrouvConfigPath = `${path}/shrouv.json`;
   const shrouvConfig = JSON.parse(
     fs.readFileSync(shrouvConfigPath, "utf-8")
-  ) as ShrouvConfig;
+  ) as ShrouvGameConfig;
   const allModules = await getDirectories("./modules");
   const selectedModules = getModulesFromProject(path);
   const choices = [
@@ -44,11 +66,19 @@ async function manageModules(path: string) {
     })),
     new inquirer.Separator(),
     {
+      name: "Install Libraries",
+      value: "libraries",
+    },
+    new inquirer.Separator(),
+    {
       name: "Back",
       value: "back",
     },
+    new inquirer.Separator(),
   ];
-  const answers = await inquirer.prompt<{ module: string }>([
+  const answers = await inquirer.prompt<{
+    module: string & "back" & "libraries";
+  }>([
     {
       type: "list",
       name: "module",
@@ -57,6 +87,10 @@ async function manageModules(path: string) {
     },
   ]);
   if (answers.module === "back") return;
+  if (answers.module === "libraries") {
+    await manageLibraries(path);
+    return;
+  }
   shrouvConfig.modules = [...shrouvConfig.modules, answers.module];
   fs.writeFileSync(shrouvConfigPath, JSON.stringify(shrouvConfig, null, 2));
   installModule(answers.module, path);
@@ -65,7 +99,7 @@ async function manageModules(path: string) {
 async function toggleArchiveProject(path: string) {
   const shrouvConfig = JSON.parse(
     fs.readFileSync(`${path}/shrouv.json`, "utf-8")
-  ) as ShrouvConfig;
+  ) as ShrouvGameConfig;
   const archiving = !shrouvConfig.archived;
   const answers = await inquirer.prompt<{ confirm: boolean }>([
     {
@@ -125,32 +159,41 @@ export async function manageProject(path: string) {
       message: "What would you like to do?",
       choices: [
         {
-          name: "1. Deploy project",
-          value: "deploy",
+          name: `1. Open in VSCode`,
+          value: "openCode",
         },
         {
-          name: "2. Build project",
+          name: `2. Open folder`,
+          value: "openFolder",
+        },
+        new inquirer.Separator(),
+        {
+          name: "3. Build project",
           value: "build",
         },
         {
-          name: `3. Delete project`,
-          value: "delete",
+          name: "4. Deploy project",
+          value: "deploy",
         },
         {
-          name: `4. Archive project`,
+          name: `5. Archive project`,
           value: "archive",
         },
         {
-          name: `5. Manage modules`,
+          name: `6. Delete project`,
+          value: "delete",
+        },
+        {
+          name: `7. Manage modules and libraries`,
           value: "manageModules",
         },
         new inquirer.Separator(),
         {
-          name: `5. Back`,
+          name: `8. Back`,
           value: "back",
         },
         {
-          name: `6. Exit`,
+          name: `9. Exit`,
           value: "exit",
         },
         new inquirer.Separator(),
@@ -241,16 +284,35 @@ export async function manageProject(path: string) {
       if (confirm) {
         if (environment === "all") {
           deleteProject(path);
-          return;
+        } else {
+          spawnProcess({
+            cmd: `mantle destroy -e ${environment}`,
+            cwd: path,
+            successMessage: `Project ${rojoConfig.name} has been deleted.`,
+          });
         }
-        spawnProcess({
-          cmd: `mantle destroy -e ${environment}`,
-          cwd: path,
-          successMessage: `Project ${rojoConfig.name} has been deleted.`,
-        });
+        selectProject();
       } else {
         manageProject(path);
       }
+      break;
+    }
+    case "openCode": {
+      spawnProcess({
+        cmd: "code .",
+        cwd: path,
+        successMessage: `${colors.green}SUCCESS ${colors.white}Opening project code in VS Code${colors.reset}`,
+      });
+      await manageProject(path);
+      break;
+    }
+    case "openFolder": {
+      spawnProcess({
+        cmd: "start .",
+        cwd: path,
+        successMessage: `${colors.green}SUCCESS ${colors.white}Opening project folder${colors.reset}`,
+      });
+      await manageProject(path);
       break;
     }
     case "archive": {
@@ -283,11 +345,11 @@ export async function selectProject() {
         !fs.existsSync(`../experiences/${experience}/default.project.json`) ||
         !fs.existsSync(`../experiences/${experience}/shrouv.json`);
       return {
-        name: `${experience} ${
-          disabled ? `${colors.gray}(invalid project)` : ""
-        } ${colors.reset}`,
+        name: experience,
         value: experience,
-        disabled,
+        disabled: disabled
+          ? `${colors.red}invalid project${colors.reset}`
+          : false,
       };
     }),
     new inquirer.Separator(),

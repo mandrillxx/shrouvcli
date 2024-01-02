@@ -10,7 +10,7 @@ import {
 import { createRojoProjectConfig } from "../../rojo.js";
 import { answersToMantleConfig } from "./mantle.js";
 import { colors } from "../../constants/index.js";
-import { ShrouvConfig } from "./shrouv.js";
+import { ShrouvGameConfig } from "./shrouv.js";
 import { manageProject } from "../select-project.js";
 
 interface CreateShrouvExperienceOptions {
@@ -39,7 +39,7 @@ async function createProject(answers: EasySetupAnswers) {
         name: answers.name,
         archived: false,
         modules: [],
-      } as ShrouvConfig,
+      } as ShrouvGameConfig,
       null,
       2
     )
@@ -48,7 +48,7 @@ async function createProject(answers: EasySetupAnswers) {
 }
 
 interface ManageNewProjectAnswers {
-  actions: "openCode" | "openFolder" | "manage" | "exit";
+  actions: "openCode" | "openFolder" | "openFolderAndCode" | "manage" | "exit";
 }
 
 async function manageNewProject(path: string) {
@@ -65,6 +65,10 @@ async function manageNewProject(path: string) {
         {
           name: "Open folder",
           value: "openFolder",
+        },
+        {
+          name: "Open folder & in VSCode",
+          value: "openFolderAndCode",
         },
         {
           name: "Manage experience",
@@ -94,6 +98,15 @@ async function manageNewProject(path: string) {
         cmd: "start .",
         cwd: path,
         successMessage: `${colors.green}SUCCESS ${colors.white}Opening project folder${colors.reset}`,
+      });
+      await manageProject(path);
+      break;
+    }
+    case "openFolderAndCode": {
+      spawnProcess({
+        cmd: "start . && code .",
+        cwd: path,
+        successMessage: `${colors.green}SUCCESS ${colors.white}Opening project folder and in VS Code${colors.reset}`,
       });
       await manageProject(path);
       break;

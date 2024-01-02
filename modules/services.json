@@ -23,8 +23,7 @@
             "@rbxts/rewire"
         ],
         [
-            "@rbxts/@npm:@rbxts/react-ts@^0.9/0",
-            "@rbxts/roact",
+            "@rbxts/roact@npm:@rbxts/react-ts@^0.9.0",
             "@rbxts/reflex",
             "@rbxts/react-reflex",
             "@rbxts/react-roblox",

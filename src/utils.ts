@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "fs";
 import fse from "fs-extra";
 import inquirer from "inquirer";
-import { ShrouvConfig } from "./services/core/shrouv.js";
+import { ShrouvGameConfig } from "./services/core/shrouv.js";
 
 export async function cloneDirectory(
   sourcePath: string,
@@ -93,6 +93,6 @@ export function getModulesFromProject(path: string) {
   const shrouvConfigPath = `${path}/shrouv.json`;
   const shrouvConfig = JSON.parse(
     fs.readFileSync(shrouvConfigPath, "utf-8")
-  ) as ShrouvConfig;
+  ) as ShrouvGameConfig;
   return shrouvConfig.modules;
 }

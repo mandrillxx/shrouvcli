@@ -1,5 +1,9 @@
-export interface ShrouvConfig {
+export interface ShrouvGameConfig {
   name: string;
   archived: boolean;
   modules: string[];
+}
+
+export interface ShrouvConfig {
+  centra_link_code: string;
 }
