@@ -22,7 +22,7 @@ async function checkCentraCode(code: string) {
   return json;
 }
 
-async function manageCentraExperience(experience: string) {
+export async function manageCentraExperience(experience: string) {
   const answers = await inquirer.prompt<{ action: string }>([
     {
       type: "list",
