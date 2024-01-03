@@ -1,6 +1,7 @@
 export interface ShrouvGameConfig {
   name: string;
   archived: boolean;
+  centra: boolean;
   modules: string[];
 }
 

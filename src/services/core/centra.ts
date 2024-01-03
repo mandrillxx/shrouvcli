@@ -8,7 +8,7 @@ import { RojoProjectConfig } from "../../rojo.js";
 import { ShrouvGameConfig } from "./shrouv.js";
 import { experienceToConfigs } from "../../utils.js";
 
-type Experience = {
+export type Experience = {
   id?: number;
   title: string;
   description: string | null;

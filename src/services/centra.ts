@@ -4,6 +4,7 @@ import { ShrouvConfig } from "./core/shrouv.js";
 import { colors, success, warning } from "../constants/index.js";
 import figlet from "figlet";
 import { beginPrompt } from "./prompt.js";
+import { Experience } from "./core/centra.js";
 
 interface CentraIdentityResponse {
   userId: string;
@@ -21,8 +22,89 @@ async function checkCentraCode(code: string) {
   return json;
 }
 
+async function manageCentraExperience(experience: string) {
+  const answers = await inquirer.prompt<{ action: string }>([
+    {
+      type: "list",
+      name: "action",
+      message: `What do you want to do with ${experience}?`,
+      choices: [
+        { name: "1. Push changes", value: "push" },
+        { name: "2. Pull changes", value: "pull" },
+        { name: "3. Delete", value: "remove" },
+        new inquirer.Separator(),
+        { name: "4. Back", value: "back" },
+        { name: "5. Exit", value: "exit" },
+        new inquirer.Separator(),
+      ],
+    },
+  ]);
+
+  switch (answers.action) {
+    case "push": {
+      break;
+    }
+    case "pull": {
+      break;
+    }
+    case "remove": {
+      break;
+    }
+    case "back": {
+      await selectCentraExperience();
+      break;
+    }
+    case "exit": {
+      return;
+    }
+  }
+}
+
+async function selectCentraExperience() {
+  const code = await getCentraCode();
+  const url = `http://localhost:3000/api/centra/experience?code=${code}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+  });
+  const json = (await response.json()) as Experience[];
+  const answers = await inquirer.prompt<{
+    experience: string & "back" & "exit";
+  }>([
+    {
+      type: "list",
+      name: "experience",
+      message: "Select an experience",
+      choices: [
+        ...json.map((experience, index) => ({
+          name: `${index + 1}. ${experience.title}`,
+          value: experience.id,
+        })),
+        new inquirer.Separator(),
+        { name: "Back", value: "back" },
+        { name: "Exit", value: "exit" },
+        new inquirer.Separator(),
+      ],
+    },
+  ]);
+
+  switch (answers.experience) {
+    case "back": {
+      await centra();
+      break;
+    }
+    case "exit": {
+      return;
+    }
+    default: {
+      await manageCentraExperience(answers.experience);
+      break;
+    }
+  }
+}
+
 interface CentraMainOptions {
-  action: "status" | "unlink" | "push" | "pull" | "update" | "back" | "exit";
+  action: "select" | "unlink" | "push" | "pull" | "update" | "back" | "exit";
 }
 
 export async function centra() {
@@ -32,7 +114,7 @@ export async function centra() {
       name: "action",
       message: "What do you want to do?",
       choices: [
-        { name: "1. Check Centra Status", value: "status" },
+        { name: "1. Select Centra Experience", value: "select" },
         { name: "2. Unlink account", value: "unlink" },
         { name: "3. Push staged changes", value: "push" },
         { name: "4. Pull newest changes", value: "pull" },
@@ -46,7 +128,8 @@ export async function centra() {
   ]);
 
   switch (answers.action) {
-    case "status": {
+    case "select": {
+      await selectCentraExperience();
       break;
     }
     case "unlink": {
