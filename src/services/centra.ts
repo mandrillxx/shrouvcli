@@ -6,11 +6,7 @@ import figlet from "figlet";
 import { beginPrompt } from "./prompt.js";
 
 interface CentraIdentityResponse {
-  id: string;
-  owner: string;
-  created_at: string;
-  updated_at: string | null;
-  metadata: any;
+  userId: string;
 }
 
 async function checkCentraCode(code: string) {
@@ -20,6 +16,7 @@ async function checkCentraCode(code: string) {
     method: "GET",
   });
   const json = (await response.json()) as CentraIdentityResponse;
+  console.dir(json);
 
   return json;
 }
@@ -49,6 +46,32 @@ export async function centra() {
   ]);
 
   switch (answers.action) {
+    case "status": {
+      break;
+    }
+    case "unlink": {
+      const shrouvConfig = JSON.parse(
+        fs.readFileSync("../shrouv.json", "utf-8")
+      ) as ShrouvConfig;
+      fs.writeFileSync(
+        "../shrouv.json",
+        JSON.stringify(
+          { ...shrouvConfig, centra_link_code: undefined },
+          null,
+          2
+        )
+      );
+      console.log(
+        `${colors.green}SUCCESS ${colors.white}Successfully unlinked Centra code${colors.reset}`
+      );
+      break;
+    }
+    case "push": {
+      break;
+    }
+    case "pull": {
+      break;
+    }
     case "back": {
       await beginPrompt();
       break;
@@ -56,6 +79,40 @@ export async function centra() {
     case "exit": {
       return;
     }
+  }
+}
+
+export async function getCentraCode() {
+  const shrouvConfig = JSON.parse(
+    fs.readFileSync("../shrouv.json", "utf-8")
+  ) as ShrouvConfig;
+  if (shrouvConfig.centra_link_code) return shrouvConfig.centra_link_code;
+  console.log("inquiring for new code");
+
+  const answers = await inquirer.prompt<{ centraCode: string }>([
+    {
+      type: "input",
+      name: "centraCode",
+      message: "What is your Centra code found on https://admin.messor.gg/?",
+      when: () =>
+        !shrouvConfig.centra_link_code ||
+        shrouvConfig.centra_link_code.length < 36,
+    },
+  ]);
+  const code = answers.centraCode;
+  try {
+    const centraIdentity = await checkCentraCode(code);
+    fs.writeFileSync(
+      "../shrouv.json",
+      JSON.stringify(
+        { ...shrouvConfig, messor_user_id: centraIdentity.userId },
+        null,
+        2
+      )
+    );
+    return code;
+  } catch (error) {
+    return await getCentraCode();
   }
 }
 
@@ -77,7 +134,9 @@ export async function linkCentra() {
   try {
     const centraIdentity = await checkCentraCode(code);
 
-    console.log(success(figlet.textSync(centraIdentity.owner)) + "\n");
+    console.log(
+      success(figlet.textSync(centraIdentity.userId.substring(0, 4))) + "\n"
+    );
 
     if (shrouvConfig.centra_link_code !== code) {
       fs.writeFileSync(

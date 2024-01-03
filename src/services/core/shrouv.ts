@@ -6,4 +6,5 @@ export interface ShrouvGameConfig {
 
 export interface ShrouvConfig {
   centra_link_code: string;
+  messor_user_id: string;
 }

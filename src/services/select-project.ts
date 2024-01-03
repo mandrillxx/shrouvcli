@@ -1,5 +1,6 @@
 import inquirer from "inquirer";
 import {
+  experienceToConfigs,
   getDirectories,
   getModulesFromProject,
   spawnProcess,
@@ -14,6 +15,7 @@ import { ShrouvGameConfig } from "./core/shrouv.js";
 import { installModule } from "./core/module.js";
 import { beginPrompt } from "./prompt.js";
 import { getServices, getDefaultServices } from "./core/service.js";
+import { manageExperienceCentra } from "./core/centra.js";
 
 interface SelectProjectAnswers {
   project: string;
@@ -28,6 +30,7 @@ interface ManageProjectAnswers {
     | "manageModules"
     | "openCode"
     | "openFolder"
+    | "manageCentra"
     | "back"
     | "exit";
 }
@@ -166,34 +169,38 @@ export async function manageProject(path: string) {
           name: `2. Open folder`,
           value: "openFolder",
         },
+        {
+          name: `3. Manage Centra`,
+          value: "manageCentra",
+        },
         new inquirer.Separator(),
         {
-          name: "3. Build project",
+          name: "4. Build project",
           value: "build",
         },
         {
-          name: "4. Deploy project",
+          name: "5. Deploy project",
           value: "deploy",
         },
         {
-          name: `5. Archive project`,
+          name: `6. Archive project`,
           value: "archive",
         },
         {
-          name: `6. Delete project`,
+          name: `7. Delete project`,
           value: "delete",
         },
         {
-          name: `7. Manage modules and libraries`,
+          name: `8. Manage modules and libraries`,
           value: "manageModules",
         },
         new inquirer.Separator(),
         {
-          name: `8. Back`,
+          name: `9. Back`,
           value: "back",
         },
         {
-          name: `9. Exit`,
+          name: `10. Exit`,
           value: "exit",
         },
         new inquirer.Separator(),
@@ -201,12 +208,7 @@ export async function manageProject(path: string) {
     },
   ]);
 
-  const mantleConfig = yaml.load(
-    fs.readFileSync(`${path}/mantle.yml`, "utf-8")
-  ) as MantleConfig;
-  const rojoConfig = JSON.parse(
-    fs.readFileSync(`${path}/default.project.json`, "utf-8")
-  ) as RojoProjectConfig;
+  const [mantleConfig, rojoConfig] = experienceToConfigs(path);
   const environments = mantleConfig.environments.map((env) => env.label);
 
   switch (answers.action) {
@@ -313,6 +315,10 @@ export async function manageProject(path: string) {
         successMessage: `${colors.green}SUCCESS ${colors.white}Opening project folder${colors.reset}`,
       });
       await manageProject(path);
+      break;
+    }
+    case "manageCentra": {
+      await manageExperienceCentra(path);
       break;
     }
     case "archive": {

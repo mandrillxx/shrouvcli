@@ -1,8 +1,11 @@
 import { spawn } from "node:child_process";
 import fs from "fs";
 import fse from "fs-extra";
+import yaml from "js-yaml";
 import inquirer from "inquirer";
 import { ShrouvGameConfig } from "./services/core/shrouv.js";
+import { RojoProjectConfig } from "./rojo.js";
+import { MantleConfig } from "./services/core/mantle.js";
 
 export async function cloneDirectory(
   sourcePath: string,
@@ -95,4 +98,24 @@ export function getModulesFromProject(path: string) {
     fs.readFileSync(shrouvConfigPath, "utf-8")
   ) as ShrouvGameConfig;
   return shrouvConfig.modules;
+}
+
+export function experienceToConfigs(
+  path: string
+): [
+  mantleConfig: MantleConfig,
+  rojoConfig: RojoProjectConfig,
+  shrouvConfig: ShrouvGameConfig
+] {
+  const mantleConfig = yaml.load(
+    fs.readFileSync(`${path}/mantle.yml`, "utf-8")
+  ) as MantleConfig;
+  const rojoConfig = JSON.parse(
+    fs.readFileSync(`${path}/default.project.json`, "utf-8")
+  ) as RojoProjectConfig;
+  const shrouvConfig = JSON.parse(
+    fs.readFileSync(`${path}/shrouv.json`, "utf-8")
+  ) as ShrouvGameConfig;
+
+  return [mantleConfig, rojoConfig, shrouvConfig];
 }
